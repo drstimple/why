@@ -1,0 +1,115 @@
+.TH WHY 1 "October 2026" "why 0.5.1" "User Commands"
+.SH NAME
+why \- investigate observable process and TCP facts without inventing causes
+.SH SYNOPSIS
+.B why
+.RB [ \-\-json ]
+.RB [ \-\-because ]
+.RB [ \-\-sample " duration" ]
+.I pid
+.br
+.B why
+.B \-\-not
+.I tcp:host:port
+.RB [ \-\-timeout " duration" ]
+.RB [ \-\-json ]
+.SH DESCRIPTION
+.B why
+is an experimental, read-only diagnostic command. It reports observations,
+explicit unknowns, and (in process evidence mode) hypotheses that are not
+established as causes. It does not claim that a parent process proves intent,
+or that a successful TCP connection proves application health.
+.PP
+Process observations are collected using
+.BR ps (1).
+Sampling compares two reported snapshots; it does not measure interval CPU
+utilization directly. Process identity checks are best effort and cannot
+completely exclude PID reuse.
+.SH OPTIONS
+.TP
+.B \-\-because
+Show the process evidence ledger, hypotheses, and suggested next steps.
+.TP
+.B \-\-json
+Print structured JSON instead of human-readable text.
+.TP
+.BI \-\-sample " duration"
+Take two process snapshots separated by the specified duration, from 100ms
+to 10s. Durations use Go notation, such as 500ms or 1s.
+.TP
+.BI \-\-not " tcp:host:port"
+Test whether a TCP connection to the specified host and port succeeds.
+An IPv6 literal must be bracketed, e.g., tcp:[::1]:5432.
+This mode cannot be combined with a PID, \-\-sample, or \-\-because.
+.TP
+.BI \-\-timeout " duration"
+Set the TCP connection timeout (default 2s, maximum 30s).
+.SH EXAMPLES
+.TP
+.B why 1
+Inspect process 1 and its reported ancestry.
+.TP
+.B why \-\-because 4821
+Display observations and explicitly unproven process hypotheses.
+.TP
+.B why \-\-sample 1s \-\-json 4821
+Compare two snapshots and output JSON.
+.TP
+.B why \-\-not tcp:localhost:5432
+Check whether a TCP handshake succeeds to localhost port 5432.
+.TP
+.B why \-\-not 'tcp:[::1]:5432' \-\-timeout 500ms
+Check the IPv6 loopback address with a shorter timeout.
+.SH EXIT STATUS
+In
+.B \-\-not
+mode:
+.TP
+.B 0
+Expected TCP condition is unmet (connection explicitly refused).
+.TP
+.B 1
+Expected TCP condition is met (TCP connection succeeded).
+.TP
+.B 2
+Invalid arguments or invalid condition.
+.TP
+.B 3
+Insufficient evidence to determine whether the TCP condition is met.
+.PP
+In process mode, 0 indicates successful reporting, 1 indicates an
+inspection error, and 2 indicates invalid arguments.
+.SH LIMITATIONS
+A TCP handshake only demonstrates connectivity at the time of the attempt.
+Timeouts, DNS failures, and other inconclusive errors do not establish a root
+cause. The tool does not collect audit history, database query state, or
+process creation events. Some process data may be unavailable due to
+permissions or platform differences.
+.SH FILES
+No configuration file is required.
+.SH SEE ALSO
+.BR ps (1),
+.BR lsof (8),
+.BR netstat (1)
+.SH AUTHORS
+A just-for-fun Unix experiment.
+.SH BUGS
+Please treat diagnostic conclusions as hypotheses unless supported by
+identified evidence. The command is experimental.
+
+.SH EASTER EGG
+.B why --why
+explains why this command exists. It is a static, lighthearted statement of purpose,
+not a system diagnosis. Combine with
+.B --json
+for machine-readable output.
+
+.SH EASTER EGG
+.B why --why
+explains the motivation behind the command.
+.B why --why --why
+(or more repeated
+.B --why
+flags) reports recursive existential inquiry and recommends going outside.
+.B --json
+works with either form. This is a joke, not a diagnostic result.
