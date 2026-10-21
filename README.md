@@ -1,4 +1,4 @@
-# why v0.5.3 — just for fun
+# why v0.6.1 — just for fun
 
 Experimental, evidence-first Unix diagnostics for macOS and Linux. Go 1.22+ and `ps` required. No third-party Go dependencies. Read-only diagnostics, except that `--not` initiates an outbound TCP connection to the requested target.
 
@@ -18,7 +18,11 @@ Or use `sudo make install` to install to `/usr/local` (depending on your system'
 ## Examples
 
 ```sh
+why --version              # print installed version
 why 1
+why --shell                 # inspect the process that invoked why
+why --shell --because       # evidence ledger for the invoking process
+why $$                      # inspect the current shell explicitly
 why --because 1
 why --sample 1s --json 1
 why --not tcp:localhost:5432
@@ -39,3 +43,7 @@ why --why --why --json
 ```
 
 No monetization. Just curiosity.
+
+## Shell investigation
+
+`why --shell` inspects the immediate parent PID of the `why` process. In an ordinary interactive shell, that is usually your shell. In a script, wrapper, or pipeline it may instead be another process. `why $$` is a shell-expanded alternative; `$$` has shell-specific behavior, particularly in subshells. Both approaches use best-effort `ps` snapshots, not audited process creation events.

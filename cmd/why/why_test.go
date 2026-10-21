@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 )
@@ -49,5 +50,19 @@ func TestRecursiveWhy(t *testing.T) {
 		} else if !strings.Contains(b.String(), "RECURSIVE EXISTENTIAL INQUIRY DETECTED") || !strings.Contains(b.String(), "Go outside.") {
 			t.Fatal(b.String())
 		}
+	}
+}
+
+func TestParentProcessIsPositive(t *testing.T) {
+	if os.Getppid() <= 0 {
+		t.Fatalf("invalid parent PID: %d", os.Getppid())
+	}
+}
+
+func TestVersion(t *testing.T) {
+	var b bytes.Buffer
+	printVersion(&b)
+	if got, want := b.String(), "why 0.6.1\n"; got != want {
+		t.Fatalf("version output %q, want %q", got, want)
 	}
 }

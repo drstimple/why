@@ -14,20 +14,36 @@ import (
 	"example.com/why/internal/diagnose"
 )
 
+const version = "0.6.1"
+
+func printVersion(w io.Writer) {
+	fmt.Fprintf(w, "why %s\n", version)
+}
+
 func main() {
 	whyDepth := countWhyFlags(os.Args[1:])
+	showVersion := flag.Bool("version", false, "print version and exit")
 	whyWhy := flag.Bool("why", false, "explain why the why command exists")
+	shell := flag.Bool("shell", false, "investigate the parent process (usually your invoking shell)")
 	sample := flag.Duration("sample", 0, "compare two ps observations (100ms to 10s; e.g. 1s)")
 	notCondition := flag.String("not", "", "check an expected condition (tcp:host:port)")
 	timeout := flag.Duration("timeout", 2*time.Second, "TCP connection timeout (max 30s)")
 	because := flag.Bool("because", false, "show evidence ledger and unproven hypotheses")
 	jsonOut := flag.Bool("json", false, "output structured JSON")
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: why [--json] [--sample 1s] [--because] <pid>\n       why --not tcp:host:port [--timeout 2s] [--json]\n\nEvidence-first diagnostics; no invented causes.")
+		fmt.Fprintln(os.Stderr, "usage: why --version\n       why [--json] [--sample 1s] [--because] <pid>\n       why --shell [--json] [--because] [--sample 1s]\n       why --not tcp:host:port [--timeout 2s] [--json]\n\nEvidence-first diagnostics; no invented causes.")
 	}
 	flag.CommandLine.Parse(normalizeWhyFlags(os.Args[1:]))
+	if *showVersion {
+		if flag.NArg() != 0 || *whyWhy || *shell || *sample != 0 || *notCondition != "" || *because || *jsonOut || *timeout != 2*time.Second {
+			fmt.Fprintln(os.Stderr, "--version cannot be combined with other options or arguments")
+			os.Exit(2)
+		}
+		printVersion(os.Stdout)
+		return
+	}
 	if *whyWhy {
-		if flag.NArg() != 0 || *notCondition != "" || *sample != 0 || *because || *timeout != 2*time.Second {
+		if flag.NArg() != 0 || *notCondition != "" || *sample != 0 || *because || *shell || *timeout != 2*time.Second {
 			fmt.Fprintln(os.Stderr, "--why accepts no PID or diagnostic options (only --json)")
 			os.Exit(2)
 		}
@@ -39,7 +55,7 @@ func main() {
 		return
 	}
 	if *notCondition != "" {
-		if flag.NArg() != 0 || *sample != 0 || *because {
+		if flag.NArg() != 0 || *sample != 0 || *because || *shell {
 			fmt.Fprintln(os.Stderr, "--not cannot be combined with PID, --sample, or --because")
 			os.Exit(2)
 		}
@@ -74,11 +90,17 @@ func main() {
 			os.Exit(3)
 		}
 	}
-	if flag.NArg() != 1 {
+	if (*shell && flag.NArg() != 0) || (!*shell && flag.NArg() != 1) {
 		flag.Usage()
 		os.Exit(2)
 	}
-	pid, err := strconv.Atoi(flag.Arg(0))
+	var pid int
+	var err error
+	if *shell {
+		pid = os.Getppid()
+	} else {
+		pid, err = strconv.Atoi(flag.Arg(0))
+	}
 	if err != nil || pid <= 0 {
 		fmt.Fprintln(os.Stderr, "PID must be a positive integer")
 		os.Exit(2)

@@ -1,7 +1,8 @@
-.TH WHY 1 "October 2026" "why 0.5.1" "User Commands"
+.TH WHY 1 "October 2026" "why 0.6.0" "User Commands"
 .SH NAME
 why \- investigate observable process and TCP facts without inventing causes
 .SH SYNOPSIS
+.B why --version
 .B why
 .RB [ \-\-json ]
 .RB [ \-\-because ]
@@ -13,6 +14,12 @@ why \- investigate observable process and TCP facts without inventing causes
 .I tcp:host:port
 .RB [ \-\-timeout " duration" ]
 .RB [ \-\-json ]
+.br
+.B why
+.B \--shell
+.RB [ \--because ]
+.RB [ \--json ]
+.RB [ \--sample " duration" ]
 .SH DESCRIPTION
 .B why
 is an experimental, read-only diagnostic command. It reports observations,
@@ -26,6 +33,11 @@ Sampling compares two reported snapshots; it does not measure interval CPU
 utilization directly. Process identity checks are best effort and cannot
 completely exclude PID reuse.
 .SH OPTIONS
+.TP
+.B \--shell
+Inspect the immediate parent process of why (usually the invoking shell).
+In scripts or wrappers, the parent may not be an interactive shell.
+Cannot be combined with a PID or \--not.
 .TP
 .B \-\-because
 Show the process evidence ledger, hypotheses, and suggested next steps.
@@ -45,6 +57,12 @@ This mode cannot be combined with a PID, \-\-sample, or \-\-because.
 .BI \-\-timeout " duration"
 Set the TCP connection timeout (default 2s, maximum 30s).
 .SH EXAMPLES
+.TP
+.B why \--shell
+Inspect the invoking parent process and its reported ancestry.
+.TP
+.B why $$
+Inspect the shell-expanded PID of the current shell.
 .TP
 .B why 1
 Inspect process 1 and its reported ancestry.
@@ -113,3 +131,7 @@ explains the motivation behind the command.
 flags) reports recursive existential inquiry and recommends going outside.
 .B --json
 works with either form. This is a joke, not a diagnostic result.
+
+.SH VERSION
+.B why --version
+prints the installed version and exits. It cannot be combined with other arguments.
